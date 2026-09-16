@@ -103,7 +103,7 @@ claude
 Внутри Claude Code введите по очереди две команды:
 
 ```
-/plugin marketplace add novyiblog-tech/yaseo
+/plugin marketplace add https://github.com/novyiblog-tech/yaseo.git
 ```
 
 ```
@@ -250,6 +250,8 @@ uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.2 yaseo --version
 - Ответ `yaseo 0.1.2` — сам yaseo в порядке. Скорее всего, Claude Code не видит `uv`: так бывает, если Claude Code запущен не из терминала. Закройте Claude Code, откройте новый терминал и запустите `claude` из него.
 - Ошибка про `git` — вернитесь к шагу 2 и поставьте `git`.
 - Ошибка сети — проверьте интернет и повторите.
+
+- `/plugin marketplace add` или `/plugin install` пишут `Failed to clone`, `SSL_ERROR_SYSCALL` или `Host key verification failed` — соединение с GitHub оборвалось или адрес ушёл по SSH. Проверьте, что в команде полный адрес `https://github.com/novyiblog-tech/yaseo.git`, и повторите команду.
 
 После исправления перезапустите Claude Code или введите `/reload-plugins`.
 

@@ -57,7 +57,7 @@ yaseo — набор инструментов, которые Claude вызыв�
 В Claude Code:
 
 ```
-/plugin marketplace add novyiblog-tech/yaseo
+/plugin marketplace add https://github.com/novyiblog-tech/yaseo.git
 /plugin install yaseo@yaseo
 ```
 

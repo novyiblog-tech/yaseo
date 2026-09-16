@@ -72,7 +72,7 @@ You need [Claude Code](https://code.claude.com/docs/en/setup) and [uv](https://d
 In Claude Code:
 
 ```
-/plugin marketplace add novyiblog-tech/yaseo
+/plugin marketplace add https://github.com/novyiblog-tech/yaseo.git
 /plugin install yaseo@yaseo
 ```
 
