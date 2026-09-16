@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /blog/two-h1.html
+Sitemap: http://127.0.0.1:__PORT__/sitemap.xml

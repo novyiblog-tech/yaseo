@@ -1,0 +1,77 @@
+[
+  {
+    "message": {
+      "content": "**Контейнеризация** (виртуализация на уровне операционной системы) — **метод виртуализации**, при котором ядро операционной системы поддерживает несколько изолированных экземпляров пространства пользователя вместо одного. [1] Эти экземпляры (контейнеры или зоны) с точки зрения выполняемых в них процессов идентичны отдельному экземпляру операционной системы. [1] Ядро обеспечивает полную изолированность контейнеров, поэтому программы из разных контейнеров не могут воздействовать друг на друга. [1]\n\n**В Yandex Cloud контейнеризация реализована с помощью сервиса Yandex Serverless Containers**. [5][6] Контейнер позволяет запустить в Yandex Cloud приложение, которое содержится в Docker-образе. [6] \n\n**Некоторые особенности реализации контейнеризации в Yandex Cloud:**\n\n* **Создание ревизии контейнера**. [6] Ревизию контейнера можно создать только из Docker-образа, который загружен в реестр Yandex Container Registry. [6] Другие реестры не поддерживаются. [6] Ревизия содержит всю информацию, необходимую для запуска контейнера. [6]\n* **Вызов контейнера**. [6] После создания ревизии контейнера его можно вызвать через HTTPS, с помощью триггера или с помощью расширения Yandex API Gateway. [6]\n* **Масштабирование контейнера**. [6] Если контейнер вызывается быстрее, чем экземпляр успевает обработать запрос, сервис масштабирует контейнер — запускает его дополнительные экземпляры. [6] Таким образом обеспечивается параллельная обработка запросов. [6]\n* **Подготовленные экземпляры**. [6] Подготовленный экземпляр — это экземпляр контейнера, при запуске которого гарантированно нет холодного старта. [6]",
+      "role": "ROLE_ASSISTANT"
+    },
+    "sources": [
+      {
+        "used": false,
+        "url": "https://ru.wikipedia.org/wiki/%D0%9A%D0%BE%D0%BD%D1%82%D0%B5%D0%B9%D0%BD%D0%B5%D1%80%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F",
+        "title": "Контейнеризация — Википедия"
+      },
+      {
+        "used": true,
+        "url": "https://example.ru/ru/docs/serverless-containers/tutorials/functions-framework-to-container",
+        "title": "Разработка функций в Functions Framework и их развертывание в Yandex Serverless Containers | Yandex Cloud - Документация"
+      },
+      {
+        "used": false,
+        "url": "https://example.ru/ru/docs/container-registry/",
+        "title": "Yandex Container Registry | Yandex Cloud - Документация"
+      },
+      {
+        "used": false,
+        "url": "https://example.ru/ru/docs/container-registry/concepts/docker-image",
+        "title": "Docker-образ. Что это и как работает? | Yandex Cloud - Документация"
+      },
+      {
+        "used": false,
+        "url": "https://example.ru/ru/docs/serverless-containers/operations/",
+        "title": "Инструкции по работе с Yandex Serverless Containers | Yandex Cloud - Документация"
+      },
+      {
+        "used": true,
+        "url": "https://example.ru/ru/docs/serverless-containers/concepts/container",
+        "title": "Контейнер в Yandex Serverless Containers | Yandex Cloud - Документация"
+      },
+      {
+        "used": true,
+        "url": "https://example.ru/ru/docs/container-registry/operations/docker-image/docker-image-push",
+        "title": "Загрузить Docker-образ в реестр Container Registry | Yandex Cloud - Документация"
+      },
+      {
+        "used": false,
+        "url": "https://example.ru/ru/docs/serverless-containers/tutorials/deploy-app-container",
+        "title": "Запуск контейнерного приложения в Yandex Serverless Containers | Yandex Cloud - Документация"
+      },
+      {
+        "used": false,
+        "url": "https://example.ru/ru/docs/container-registry/tutorials/fault-tolerance",
+        "title": "Настройка отказоустойчивой архитектуры в Yandex Cloud | Yandex Cloud - Документация"
+      },
+      {
+        "used": false,
+        "url": "https://example.ru/ru/docs/serverless-containers/tf-ref",
+        "title": "Справочник Terraform для Yandex Serverless Containers | Yandex Cloud - Документация"
+      }
+    ],
+    "searchQueries": [
+      {
+        "text": "что такое контейнеризация и как она реализована в yandex cloud date 2025 01 01 date 2025 01 01 date 2025 01 01",
+        "reqId": "1742492744075717-6834712924673670818-e23cqdex********-BAL"
+      },
+      {
+        "text": "как контейнеризация реализована в yandex cloud date 2025 01 01 date 2025 01 01 date 2025 01 01",
+        "reqId": "1742492744352285-5531077099747983300-hhsihxn5********-BAL"
+      },
+      {
+        "text": "что такое контейнеризация date 2025 01 01 date 2025 01 01 date 2025 01 01",
+        "reqId": "1742492744351443-10540017330195862709-gai4ndrg********-BAL"
+      }
+    ],
+    "isAnswerRejected": false,
+    "isBulletAnswer": false,
+    "fixedMisspellQuery": "Что такое контейнеризация и как она реализована в Yandex Cloud?"
+  }
+]

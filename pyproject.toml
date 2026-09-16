@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "yaseo"
+version = "0.1.0"
+description = "Открытый SEO-инструмент под Яндекс: выдача, Wordstat, позиции, семантическое ядро, аудит и MCP-сервер"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "yaseo contributors" }]
+keywords = ["seo", "yandex", "wordstat", "mcp", "serp", "geo"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Natural Language :: Russian",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/novyiblog-tech/yaseo"
+
+[project.scripts]
+yaseo = "yaseo.cli:main"
+yaseo-mcp = "yaseo.mcp_server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/yaseo"]

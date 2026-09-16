@@ -1,0 +1,24 @@
+{
+  "name": "yaseo",
+  "displayName": "yaseo",
+  "version": "0.1.0",
+  "description": "SEO и видимость в ИИ-поиске для сайтов в рунете: Wordstat, выдача Яндекса, позиции, технический аудит, брифы статей, цитируемость в ИИ-ответах. Работает на ваших ключах.",
+  "author": {
+    "name": "novyiblog-tech",
+    "url": "https://github.com/novyiblog-tech"
+  },
+  "homepage": "https://github.com/novyiblog-tech/yaseo",
+  "repository": "https://github.com/novyiblog-tech/yaseo",
+  "license": "MIT",
+  "keywords": [
+    "seo",
+    "yandex",
+    "wordstat",
+    "serp",
+    "rank-tracking",
+    "site-audit",
+    "geo",
+    "ai-search",
+    "mcp"
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "output": [
+    {
+      "type": "search_results",
+      "queries": [
+        "AI infrastructure announcements"
+      ],
+      "results": [
+        {
+          "id": 1,
+          "url": "https://example.ru/news",
+          "title": "Example AI infrastructure announcement",
+          "snippet": "A short snippet from the search result.",
+          "date": "2026-05-01",
+          "last_updated": "2026-05-01",
+          "source": "web"
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "The answer generated from the search results."
+        }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 1200,
+    "output_tokens": 300,
+    "total_tokens": 1500,
+    "tool_calls_details": {
+      "search_web": {
+        "invocation": 1
+      }
+    }
+  }
+}

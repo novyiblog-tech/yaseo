@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: tests (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        # 3.14 включена по прямому требованию задачи ("+3.14, если доступна
+        # в setup-python"); если её ещё нет в манифесте раннера, эта ячейка
+        # матрицы упадёт на шаге setup-python, а не молча пропустится.
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Тесты (без сети, только стандартная библиотека)
+        run: PYTHONPATH=src python -m unittest discover -s tests -v
+
+      - name: pyflakes (проверка кода; сам пакет остаётся без зависимостей)
+        run: |
+          pip install pyflakes
+          python -m pyflakes src tests
+
+  build:
+    name: сборка пакета (python -m build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Собрать sdist и wheel
+        run: |
+          pip install build
+          python -m build
+
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

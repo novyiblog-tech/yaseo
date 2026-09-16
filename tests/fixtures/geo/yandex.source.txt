@@ -1,0 +1,3 @@
+https://aistudio.yandex.ru/ru/docs/search-api/operations/generative-search
+Снято 16.09.2026 (firecrawl scrape).
+Раздел «Пример ответа» (REST). В справке длинная строка message.content разбита переносами с «\» — они склеены пробелом. Подстановка: yandex.cloud -> example.ru. Остальное дословно.

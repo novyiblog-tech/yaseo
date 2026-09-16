@@ -1,0 +1,21 @@
+{
+  "name": "yaseo",
+  "owner": {
+    "name": "novyiblog-tech",
+    "url": "https://github.com/novyiblog-tech"
+  },
+  "description": "Открытый SEO-инструмент под Яндекс для Claude Code: семантика, выдача, позиции, аудит, видимость в ИИ-поиске.",
+  "plugins": [
+    {
+      "name": "yaseo",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/novyiblog-tech/yaseo.git",
+        "path": "plugins/yaseo",
+        "ref": "v0.1.0"
+      },
+      "description": "SEO и видимость в ИИ-поиске для сайтов в рунете, на ваших ключах Яндекса. Открытый код, MIT.",
+      "category": "SEO"
+    }
+  ]
+}
