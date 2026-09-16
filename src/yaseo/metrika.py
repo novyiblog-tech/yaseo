@@ -274,8 +274,8 @@ def main(argv: list[str] | None = None) -> int:
                    help="id целей воронки через запятую, по порядку; по умолчанию все цели счётчика")
     p.add_argument("--цели", "--show-goals", action="store_true", dest="show_goals",
                    help="цели, заведённые на счётчике проекта")
-    p.add_argument("--с", dest="date_from", default=None, help="начало периода ГГГГ-ММ-ДД")
-    p.add_argument("--по", dest="date_to", default=None, help="конец периода ГГГГ-ММ-ДД")
+    p.add_argument("--с", "--from", dest="date_from", default=None, help="начало периода ГГГГ-ММ-ДД")
+    p.add_argument("--по", "--to", dest="date_to", default=None, help="конец периода ГГГГ-ММ-ДД")
     p.add_argument("--project", type=int, default=1)
     p.add_argument("--days", type=int, default=28)
     p.add_argument("--engine", default=None,
