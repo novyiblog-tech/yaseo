@@ -2,7 +2,7 @@
 
 yaseo работает на ваших ключах. Обязательны два значения Яндекса, остальные можно не задавать.
 
-Команды `yaseo …` ниже даны в коротком виде. Если вы не ставили yaseo командой `uv tool install`, пишите вместо `yaseo` так: `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.0 yaseo …`.
+Команды `yaseo …` ниже даны в коротком виде. Если вы не ставили yaseo командой `uv tool install`, пишите вместо `yaseo` так: `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.1 yaseo …`.
 
 ## Где yaseo ищет ключи
 

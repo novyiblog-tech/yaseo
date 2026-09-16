@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "yaseo"
-version = "0.1.0"
+version = "0.1.1"
 description = "Открытый SEO-инструмент под Яндекс: выдача, Wordstat, позиции, семантическое ядро, аудит и MCP-сервер"
 readme = "README.md"
 requires-python = ">=3.10"

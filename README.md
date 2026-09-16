@@ -59,12 +59,12 @@ yaseo — набор инструментов, которые Claude вызыв�
 /plugin install yaseo@yaseo
 ```
 
-Плагин подключает MCP-сервер `yaseo` и семь скиллов: `yaseo-setup`, `seo-site-check`, `keyword-research`, `position-tracking`, `content-brief`, `improve-positions`, `ai-visibility`. Сервер запускается командой `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.0 yaseo-mcp`, поэтому на компьютере должен быть `uv`.
+Плагин подключает MCP-сервер `yaseo` и семь скиллов: `yaseo-setup`, `seo-site-check`, `keyword-research`, `position-tracking`, `content-brief`, `improve-positions`, `ai-visibility`. Сервер запускается командой `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.1 yaseo-mcp`, поэтому на компьютере должен быть `uv`.
 
 Затем ключи:
 
 ```
-uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.0 yaseo init
+uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.1 yaseo init
 ```
 
 ### 2. Только MCP-сервер через uvx
@@ -72,15 +72,15 @@ uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.0 yaseo init
 Для Claude Code без плагина или другого MCP-клиента:
 
 ```
-claude mcp add --transport stdio yaseo -- uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.0 yaseo-mcp
+claude mcp add --transport stdio yaseo -- uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.1 yaseo-mcp
 ```
 
-В других клиентах укажите команду `uvx` с аргументами `--from git+https://github.com/novyiblog-tech/yaseo@v0.1.0 yaseo-mcp`.
+В других клиентах укажите команду `uvx` с аргументами `--from git+https://github.com/novyiblog-tech/yaseo@v0.1.1 yaseo-mcp`.
 
 Постоянная команда `yaseo` в терминале:
 
 ```
-uv tool install git+https://github.com/novyiblog-tech/yaseo@v0.1.0
+uv tool install git+https://github.com/novyiblog-tech/yaseo@v0.1.1
 yaseo --help
 ```
 
@@ -178,7 +178,7 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | uv run yaseo-mcp
 
 ## Безопасность
 
-Свойства версии 0.1.0:
+Свойства версии 0.1.1:
 
 - **Внешние данные показываются как данные, а не как команды.** Содержимое сайтов при аудите и ответы ИИ-провайдеров при проверке видимости идут в вывод отдельным, явно подписанным блоком; инструкции внутри них не выполняются.
 - **Ключ не уходит на чужой домен.** Запросы с ключом или токеном идут только по https и не следуют за перенаправлениями — это держит общий сетевой слой пакета (`net.py`).

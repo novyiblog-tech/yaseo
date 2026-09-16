@@ -12,7 +12,7 @@
         "source": "git-subdir",
         "url": "https://github.com/novyiblog-tech/yaseo.git",
         "path": "plugins/yaseo",
-        "ref": "v0.1.0"
+        "ref": "v0.1.1"
       },
       "description": "SEO и видимость в ИИ-поиске для сайтов в рунете, на ваших ключах Яндекса. Открытый код, MIT.",
       "category": "SEO"
