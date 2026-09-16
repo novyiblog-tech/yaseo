@@ -200,6 +200,10 @@ def normalize_url(url: str) -> str:
     parts = urlsplit(url)
     scheme = (parts.scheme or "http").lower()
     host = (parts.hostname or "").lower()
+    if ":" in host:
+        # IPv6-литерал: `hostname` отдаёт его без скобок, а без скобок
+        # `http://::1:8080/` уже не адрес — порт не отделить от адреса.
+        host = f"[{host}]"
     port = parts.port
     if port and not (scheme == "http" and port == 80) and not (scheme == "https" and port == 443):
         host = f"{host}:{port}"

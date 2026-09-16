@@ -103,6 +103,26 @@ class PrivateAddressTests(unittest.TestCase):
                         return_value=[(2, 1, 6, "", ("127.0.0.1", 0))]):
             self.assertEqual(net.private_address("rebind.example"), "127.0.0.1")
 
+    def test_hanging_dns_refuses_instead_of_skipping(self) -> None:
+        """Зависший резолвер: отказ за DNS_TIMEOUT, а не пропуск проверки."""
+        release = threading.Event()
+        self.addCleanup(release.set)
+
+        def hang(*_a, **_k):
+            release.wait(5)
+            return [(2, 1, 6, "", ("127.0.0.1", 0))]
+
+        with mock.patch.object(net, "DNS_TIMEOUT", 0.2), \
+                mock.patch("socket.getaddrinfo", side_effect=hang):
+            with self.assertRaises(net.UnsafeURL) as ctx:
+                net.check_url("http://slow.example/")
+        self.assertIn("DNS не ответил", str(ctx.exception.reason))
+
+    def test_dns_failure_still_left_to_request(self) -> None:
+        import socket
+        with mock.patch("socket.getaddrinfo", side_effect=socket.gaierror(8, "nodename")):
+            self.assertIsNone(net.private_address("nope.example"))
+
     def test_check_url_texts(self) -> None:
         with self.assertRaises(net.UnsafeURL) as ctx:
             net.check_url("file:///etc/passwd")
@@ -270,6 +290,14 @@ class SitemapTests(IsolatedTestCase):
         self.assertTrue(audit._own_domain("https://cdn.example.ru/s.xml", "https://example.ru/"))
         self.assertFalse(audit._own_domain("https://example.com/s.xml", "https://example.ru/"))
         self.assertFalse(audit._own_domain("file:///s.xml", "https://example.ru/"))
+
+    def test_ipv6_host_is_own_and_not_empty(self) -> None:
+        from yaseo.geo import domains
+        self.assertEqual(domains.host_of("::1"), "::1")
+        self.assertEqual(domains.host_of("[::1]"), "::1")
+        self.assertEqual(domains.registrable("2a00:1450::1"), "2a00:1450::1")
+        self.assertTrue(audit._own_domain("http://[::1]:8080/s.xml", "http://[::1]:8080/"))
+        self.assertFalse(audit._own_domain("http://[::2]:8080/s.xml", "http://[::1]:8080/"))
 
 
 class ReadinessSafetyTests(IsolatedTestCase):

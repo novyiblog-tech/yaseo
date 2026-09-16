@@ -53,7 +53,12 @@ def host_of(value: str) -> str:
     if not value:
         return ""
     if "://" not in value:
-        value = "http://" + value.lstrip("/")
+        value = value.lstrip("/")
+        if value.count(":") > 1 and not value.startswith("["):
+            # Голый IPv6 (`::1`, `2a00::1`): без скобок `urlsplit` не отличит
+            # адрес от порта и вернёт пустой хост.
+            value = f"[{value}]"
+        value = "http://" + value
     try:
         host = urlsplit(value).hostname or ""
     except ValueError:

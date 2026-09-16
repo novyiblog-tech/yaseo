@@ -28,6 +28,7 @@ import ipaddress
 import os
 import re
 import socket
+import threading
 import urllib.error
 import urllib.request
 from urllib.parse import urljoin, urlsplit, urlunsplit
@@ -245,6 +246,39 @@ def _ip_is_private(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     return any(ip.version == net.version and ip in net for net in PRIVATE_NETWORKS)
 
 
+#: Сколько ждать ответа DNS при проверке адреса, секунд. `socket.getaddrinfo`
+#: своего таймаута не имеет: зависший резолвер держал бы аудит и MCP-вызов
+#: без предела.
+DNS_TIMEOUT = 5.0
+
+
+def _resolve(host: str) -> list:
+    """`getaddrinfo` с пределом по времени. Не ответил — UnsafeURL.
+
+    Молча пропустить проверку на таймауте нельзя: запрос потом разрешит имя
+    сам, и медленный DNS стал бы обходом запрета на внутренние адреса.
+    """
+    box: dict = {}
+
+    def run() -> None:
+        try:
+            box["infos"] = socket.getaddrinfo(host, None)
+        except BaseException as e:  # noqa: BLE001 — передаётся вызывающему
+            box["error"] = e
+
+    worker = threading.Thread(target=run, name="yaseo-dns", daemon=True)
+    worker.start()
+    worker.join(DNS_TIMEOUT)
+    if worker.is_alive():
+        raise UnsafeURL(
+            f"DNS не ответил за {DNS_TIMEOUT:g} с на имя {host}: не удалось проверить, "
+            "что адрес не внутренний. Проверьте сеть и повторите"
+        )
+    if "error" in box:
+        raise box["error"]
+    return box["infos"]
+
+
 def private_address(host: str) -> str | None:
     """
     Внутренний ли хост. Возвращает найденный внутренний адрес или None.
@@ -265,7 +299,11 @@ def private_address(host: str) -> str | None:
     if ip is not None:
         return str(ip) if _ip_is_private(ip) else None
     try:
-        infos = socket.getaddrinfo(host, None)
+        infos = _resolve(host)
+    except UnsafeURL:
+        # UnsafeURL — наследник OSError: без этой строки таймаут DNS
+        # проглатывался бы ниже и проверка молча пропускалась.
+        raise
     except (socket.gaierror, UnicodeError, OSError):
         return None
     for info in infos:

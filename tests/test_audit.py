@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import functools
 import http.server
+import socket
 import tempfile
 import threading
 import unittest
@@ -148,6 +149,62 @@ class NormalizeAndDedupTests(unittest.TestCase):
         a = audit.dedup_key("https://example.ru/blog/x/")
         b = audit.dedup_key("https://example.ru/blog/x?utm_source=blog&utm_campaign=y")
         self.assertEqual(a, b)
+
+    def test_normalize_url_keeps_ipv6_brackets(self) -> None:
+        self.assertEqual(audit.normalize_url("http://[::1]:8080/a"), "http://[::1]:8080/a")
+        self.assertEqual(audit.normalize_url("HTTPS://[2A00:1450::1]/"), "https://[2a00:1450::1]/")
+
+
+def _ipv6_loopback_available() -> bool:
+    try:
+        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
+            s.bind(("::1", 0))
+        return True
+    except OSError:
+        return False
+
+
+@unittest.skipUnless(_ipv6_loopback_available(), "нет IPv6 на петле")
+class AuditIPv6LiteralTests(unittest.TestCase):
+    """Сайт по адресу `http://[::1]:порт/` обходится, а не «нет домена»."""
+
+    def test_crawls_ipv6_literal(self) -> None:
+        pages = {
+            "/": b'<html><head><title>Main page title here ok</title></head>'
+                 b'<body><a href="/about">about</a></body></html>',
+            "/about": b'<html><head><title>About page title here ok</title></head>'
+                      b'<body><a href="/">main</a></body></html>',
+        }
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):  # noqa: N802
+                body = pages.get(self.path)
+                self.send_response(200 if body else 404)
+                body = body or b"not found"
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *_a):
+                pass
+
+        class Server(http.server.ThreadingHTTPServer):
+            address_family = socket.AF_INET6
+
+        httpd = Server(("::1", 0), Handler)
+        thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+        thread.start()
+        self.addCleanup(thread.join, 5)
+        self.addCleanup(httpd.server_close)
+        self.addCleanup(httpd.shutdown)
+
+        root = f"http://[::1]:{httpd.server_address[1]}/"
+        result = audit.audit_site(root, max_pages=5, delay=0, timeout=5,
+                                  use_sitemap=False, check_links=0, allow_private=True)
+        self.assertIsNone(result.error)
+        self.assertEqual(result.root, root)
+        self.assertEqual(result.pages_crawled, 2)
 
 
 if __name__ == "__main__":
