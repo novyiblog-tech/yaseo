@@ -21,4 +21,4 @@ Wordstat и Search API работают на одном сервисном кл�
 - mcp_server    — MCP-сервер для агентов
 """
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"

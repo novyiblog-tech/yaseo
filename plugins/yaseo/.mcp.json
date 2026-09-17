@@ -4,7 +4,7 @@
       "command": "uvx",
       "args": [
         "--from",
-        "git+https://github.com/novyiblog-tech/yaseo@v0.1.2",
+        "git+https://github.com/novyiblog-tech/yaseo@v0.1.3",
         "yaseo-mcp"
       ]
     }

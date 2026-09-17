@@ -117,7 +117,10 @@ def tool_whoami(_: dict) -> str:
     lines = [f"yaseo {__version__}", ""]
     missing = d["не_хватает_для_выдачи"]
     if missing:
-        lines += ["Выдача и Wordstat: не готово.", _env.missing_keys_message(missing), ""]
+        lines += ["Без ключей уже работают: проверка сайта (audit_site), готовность к ИИ-поиску "
+                  "(geo_readiness) и план правок (get_action_plan). Ключи Яндекса нужны для выдачи, "
+                  "Wordstat и позиций.", "",
+                  "Выдача и Wordstat: не готово.", _env.missing_keys_message(missing), ""]
     else:
         values, _ = _env.read_all()
         lines += [f"Выдача и Wordstat: готово, folderId {values['YC_FOLDER_ID'][:6]}…", ""]

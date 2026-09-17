@@ -4,7 +4,7 @@
     "name": "novyiblog-tech",
     "url": "https://github.com/novyiblog-tech"
   },
-  "description": "Открытый SEO-инструмент под Яндекс для Claude Code: семантика, выдача, позиции, аудит, видимость в ИИ-поиске.",
+  "description": "Плагин yaseo для Claude Code: проверка сайта и план правок. Каким сайт видит Яндекс и каким его видят ИИ-поиски.",
   "plugins": [
     {
       "name": "yaseo",
@@ -12,9 +12,9 @@
         "source": "git-subdir",
         "url": "https://github.com/novyiblog-tech/yaseo.git",
         "path": "plugins/yaseo",
-        "ref": "v0.1.2"
+        "ref": "v0.1.3"
       },
-      "description": "SEO и видимость в ИИ-поиске для сайтов в рунете, на ваших ключах Яндекса. Открытый код, MIT.",
+      "description": "Проверка сайта и план правок: каким сайт видит Яндекс и каким его видят ИИ-поиски. Первая проверка без ключей. Открытый код, MIT.",
       "category": "SEO"
     }
   ]

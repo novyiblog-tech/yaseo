@@ -189,6 +189,10 @@ class SafeToolsWithoutKeysTests(IsolatedTestCase):
         self.assertNotIn("isError", res["result"])
         text = res["result"]["content"][0]["text"]
         self.assertIn("не готово", text.lower())
+        # Новичок без ключей должен узнать, что первый результат уже доступен.
+        self.assertIn("Без ключей уже работают", text)
+        for tool in ("audit_site", "geo_readiness", "get_action_plan"):
+            self.assertIn(tool, text)
 
     def test_get_storage_stats_works_on_empty_db(self) -> None:
         res = _call("get_storage_stats", req_id=21)
