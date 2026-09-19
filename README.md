@@ -58,7 +58,7 @@ Claude обойдёт до 30 страниц, посмотрит, пускает
 Ключи вписываются одной командой в терминале:
 
 ```
-uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.3 yaseo init
+uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.4 yaseo init
 ```
 
 За обращения платите вы, по прайсу Яндекса: https://aistudio.yandex.ru/ru/docs/search-api/pricing. Перед платным шагом Claude называет, сколько будет обращений, и ждёт вашего «да». Дороже всего генеративный ответ Яндекса: на 16.09.2026 это 5 080 ₽ за 1 000 запросов. Ключи Perplexity, OpenAI, Gemini и Claude добавляются по желанию, платите по своему тарифу у провайдера.
@@ -105,22 +105,22 @@ uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.3 yaseo init
 
 ## Другие способы установки
 
-Плагин из раздела выше подключает MCP-сервер `yaseo` и семь скиллов: `yaseo-setup`, `seo-site-check`, `keyword-research`, `position-tracking`, `content-brief`, `improve-positions`, `ai-visibility`. Сервер запускается командой `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.3 yaseo-mcp`, поэтому без `uv` он не поднимется.
+Плагин из раздела выше подключает MCP-сервер `yaseo` и семь скиллов: `yaseo-setup`, `seo-site-check`, `keyword-research`, `position-tracking`, `content-brief`, `improve-positions`, `ai-visibility`. Сервер запускается командой `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.4 yaseo-mcp`, поэтому без `uv` он не поднимется.
 
 ### Только MCP-сервер
 
 Для Claude Code без плагина:
 
 ```
-claude mcp add --transport stdio yaseo -- uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.3 yaseo-mcp
+claude mcp add --transport stdio yaseo -- uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.4 yaseo-mcp
 ```
 
-В другом MCP-клиенте укажите команду `uvx` с аргументами `--from git+https://github.com/novyiblog-tech/yaseo@v0.1.3 yaseo-mcp`.
+В другом MCP-клиенте укажите команду `uvx` с аргументами `--from git+https://github.com/novyiblog-tech/yaseo@v0.1.4 yaseo-mcp`.
 
 Команда `yaseo` в терминале насовсем:
 
 ```
-uv tool install git+https://github.com/novyiblog-tech/yaseo@v0.1.3
+uv tool install git+https://github.com/novyiblog-tech/yaseo@v0.1.4
 yaseo --help
 ```
 

@@ -117,7 +117,7 @@ def key_sources(keys: tuple[str, ...]) -> dict[str, str | None]:
     if core is not None:
         try:
             return dict(core(keys))
-        except Exception:  # noqa: BLE001 — показ статуса не должен падать
+        except Exception:  # noqa: BLE001 — показ статуса не должен падать  # nosec B110
             pass
     files_values: dict[str, str] = {}
     for f in reversed(_env_files()):

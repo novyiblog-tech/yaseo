@@ -42,7 +42,7 @@ import time
 import urllib.error
 import urllib.request
 import urllib.robotparser
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # чужой XML идёт через untrusted.parse_xml  # nosec B405
 import zlib
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
@@ -52,11 +52,12 @@ from urllib.parse import urljoin, urlsplit, urlunsplit
 
 from . import net
 from .geo.domains import registrable
+from .untrusted import XmlRefused, parse_xml
 
 USER_AGENT = net.user_agent("audit", "(+https://github.com/novyiblog-tech/yaseo)")
 
 #: Токен для robotparser: он сверяет User-agent по первому слову без версии.
-ROBOTS_TOKEN = "yaseo-audit"
+ROBOTS_TOKEN = "yaseo-audit"  # имя бота в robots.txt, не пароль  # nosec B105
 
 #: Пороги проверок. Меняются осознанно — это проектное решение, не измерение.
 TITLE_MIN = 30
@@ -752,7 +753,10 @@ def _read_sitemap(
             return []
 
     try:
-        root_el = ET.fromstring(body)
+        root_el = parse_xml(body)
+    except XmlRefused as e:
+        notes["errors"].append(f"{url}: {e}")
+        return []
     except ET.ParseError:
         return []
 

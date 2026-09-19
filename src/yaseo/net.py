@@ -360,7 +360,7 @@ class _RefuseRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: D102
         try:
             fp.close()
-        except Exception:  # noqa: BLE001 — закрытие тела не критично
+        except Exception:  # noqa: BLE001 — закрытие тела не критично  # nosec B110
             pass
         raise RedirectRefused(code, req.full_url, newurl)
 

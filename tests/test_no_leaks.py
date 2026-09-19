@@ -16,6 +16,7 @@ from __future__ import annotations
 import fnmatch
 import os
 import re
+import subprocess  # только `git ls-files`, список аргументов  # nosec B404
 import tempfile
 import unittest
 from pathlib import Path
@@ -35,7 +36,34 @@ def _skip_dir(name: str) -> bool:
     return name in SKIP_DIR_NAMES or name.endswith(".egg-info")
 
 
+def git_files(root: Path) -> list[Path] | None:
+    """Файлы, которые уедут в репозиторий: отслеживаемые плюс неотслеживаемые
+    мимо .gitignore. `None` — если git не ответил (распакованный архив).
+
+    Обход дерева видит и рабочий мусор соседних задач, который в репозиторий
+    не попадёт никогда. 19.09.2026 на этом встал весь прогон: каталог ролика
+    от скилла /brag лежал рядом с кодом и принёс домашний путь. Спросить git
+    строже, а не слабее: неотслеживаемый файл он тоже покажет, если тот не
+    закрыт .gitignore, то есть ровно то, что уедет следующим `git add`.
+    """
+    try:
+        out = subprocess.run(  # nosec B603 B607
+            ["git", "-C", str(root), "ls-files", "--cached", "--others",
+             "--exclude-standard", "-z"],
+            capture_output=True, timeout=30, check=False)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if out.returncode != 0:
+        return None
+    names = [n for n in out.stdout.decode("utf-8", "replace").split("\0") if n]
+    return [root / n for n in names if (root / n).is_file()]
+
+
 def iter_scanned_files(root: Path):
+    listed = git_files(root)
+    if listed is not None:
+        yield from listed
+        return
     for path in root.rglob("*"):
         if not path.is_file():
             continue
@@ -131,6 +159,49 @@ class LeakScannerSelfTest(unittest.TestCase):
             (tmp_path / "leftover.db").write_bytes(b"\x00\x01")
             self.assertTrue(scan_files(tmp_path))
 
+    def test_git_mode_sees_what_would_be_committed(self) -> None:
+        """Контроль на обе стороны: незакрытый файл виден, закрытый .gitignore
+        не виден, а сам список берётся у git, а не обходом дерева."""
+        def git(*args, cwd):
+            return subprocess.run(["git", *args], cwd=cwd,  # nosec B603 B607
+                                  capture_output=True, check=False, timeout=30)
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            if git("init", "-q", cwd=repo).returncode != 0:
+                self.skipTest("git недоступен")
+            # Путь собран по частям: литерал в этом файле сам был бы находкой.
+            (repo / "junk.md").write_text("лежит в /" + "Users/someone/x\n", encoding="utf-8")
+            self.assertIsNotNone(git_files(repo))
+            self.assertEqual(len(scan_home_paths(repo)), 1)
+
+            (repo / ".gitignore").write_text("junk.md\n", encoding="utf-8")
+            self.assertEqual(scan_home_paths(repo), [])
+
+    def test_git_mode_falls_back_outside_a_repository(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNone(git_files(Path(tmp)))
+
+    def test_empty_git_answer_is_not_mistaken_for_a_clean_repo(self) -> None:
+        """Пустой ответ git (дерево целиком закрыто родительским .gitignore)
+        отличается от `None`, и на нём сканер не находит ничего. Значит
+        проверки обязаны сами убеждаться, что файлы вообще нашлись."""
+        def git(*args, cwd):
+            return subprocess.run(["git", *args], cwd=cwd,  # nosec B603 B607
+                                  capture_output=True, check=False, timeout=30)
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp)
+            if git("init", "-q", cwd=parent).returncode != 0:
+                self.skipTest("git недоступен")
+            (parent / ".gitignore").write_text("/*\n", encoding="utf-8")
+            work = parent / "yaseo"
+            work.mkdir()
+            (work / "leak.md").write_text("лежит в /" + "Users/someone/x\n", encoding="utf-8")
+
+            self.assertEqual(git_files(work), [])       # не None: режим git включён
+            self.assertEqual(scan_home_paths(work), [])  # и утечки «нет»
+            # Ровно поэтому в NoLeaksInRepoTests.setUp стоит счёт файлов.
+            self.assertEqual(list(iter_scanned_files(work)), [])
+
     def test_scanner_is_clean_on_an_empty_directory(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
@@ -140,6 +211,20 @@ class LeakScannerSelfTest(unittest.TestCase):
 
 
 class NoLeaksInRepoTests(unittest.TestCase):
+    def setUp(self) -> None:
+        """Положительный контроль: молчание сканера доказывает что-то, только
+        если он вообще смотрел файлы.
+
+        `git ls-files` отвечает пустым списком и кодом 0, когда дерево лежит
+        внутри чужого репозитория, который закрывает его целиком (whitelist
+        `/*` в .gitignore родителя), или когда это распакованный архив внутри
+        любого репозитория. Тогда все три проверки ниже зеленели бы, не
+        прочитав ни одного файла. Нашло независимое ревью 20.09.2026.
+        """
+        self.scanned = list(iter_scanned_files(REPO_ROOT))
+        self.assertGreater(len(self.scanned), 50,
+                           "сканер утечек не увидел файлов: проверка ничего не доказывает")
+
     def test_no_private_words_anywhere_in_the_repo(self) -> None:
         source = os.environ.get("YASEO_LEAK_WORDS")
         if not source:

@@ -42,7 +42,7 @@ import urllib.request
 from . import env as _env
 from . import net
 
-TOKEN_URL = "https://oauth.yandex.ru/token"
+TOKEN_URL = "https://oauth.yandex.ru/token"  # адрес выдачи токена, сам токен тут не лежит  # nosec B105
 
 
 class YandexAuthError(RuntimeError):

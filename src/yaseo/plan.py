@@ -772,7 +772,7 @@ def _readiness_action(section: str, issue, R, checked_at: str,
                   "«разрешён»." if bot else verify)
         why = (f"robots.txt закрывает {token}; {note}" if bot
                else "robots.txt закрывает бота ИИ-поиска")
-        if token == "Google-Extended":
+        if token == "Google-Extended":  # имя ИИ-бота в robots.txt  # nosec B105
             why += ". На Google Поиск этот запрет не влияет"
     elif code in ("llms-txt-missing", "llms-txt-is-html"):
         data[F_LLMS] = _c(issue.evidence)

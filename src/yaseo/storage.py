@@ -461,7 +461,7 @@ def set_project_terms(project_id: int, brand_terms: list[str] | None = None,
         return
     args.append(project_id)
     with connect(path) as conn:
-        conn.execute(f"UPDATE projects SET {', '.join(sets)} WHERE id=?", args)
+        conn.execute(f"UPDATE projects SET {', '.join(sets)} WHERE id=?", args)  # имена колонок только литералы из кода, значения через ?  # nosec B608
 
 
 def project_stems(project_id: int, path: Path | None = None
@@ -526,7 +526,7 @@ def set_project_stems(project_id: int, service_stems: list[str] | None = None,
 
     args.append(int(project_id))
     with connect(path) as conn:
-        conn.execute(f"UPDATE projects SET {', '.join(sets)} WHERE id=?", args)
+        conn.execute(f"UPDATE projects SET {', '.join(sets)} WHERE id=?", args)  # имена колонок только литералы из кода, значения через ?  # nosec B608
     return project_stems(project_id, path)
 
 
@@ -1284,6 +1284,13 @@ def save_search_queries(host_id: str, date_from: str, date_to: str, rows: list[d
     return len(payload)
 
 
+#: Таблицы и условия, которые `_latest_window` вправе подставить в текст
+#: запроса. Имя таблицы параметром не передаётся (SQLite не умеет), поэтому
+#: оно берётся из списка, а не из аргумента как есть. Значения идут через `?`.
+_WINDOW_TABLES = frozenset({"search_queries", "search_query_pages", "metrika_pages"})
+_WINDOW_WHERE = frozenset({"host_id=?", "counter=? AND source=?"})
+
+
 def _latest_window(conn, table: str, where: str, args: tuple) -> tuple[str, str] | None:
     """
     Последнее окно выгрузки — ОДНО окно, а не все строки с последним `date_to`.
@@ -1300,8 +1307,12 @@ def _latest_window(conn, table: str, where: str, args: tuple) -> tuple[str, str]
     запросил последними. При равной отметке — более длинное окно.
     Две выгрузки разной длины — разные совокупности; складывать их нельзя.
     """
+    if table not in _WINDOW_TABLES:
+        raise ValueError(f"таблица {table!r} не из списка окон")
+    if where not in _WINDOW_WHERE:
+        raise ValueError(f"условие {where!r} не из списка окон")
     row = conn.execute(
-        f"SELECT date_from, date_to FROM {table} WHERE {where} "
+        f"SELECT date_from, date_to FROM {table} WHERE {where} "  # куски из списка выше  # nosec B608
         "GROUP BY date_from, date_to "
         "ORDER BY date_to DESC, MAX(fetched_at) DESC, date_from ASC LIMIT 1",
         args,

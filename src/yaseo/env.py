@@ -66,8 +66,8 @@ KEY_HINTS = {
     "YC_FOLDER_ID": "идентификатор каталога Яндекс Облака",
     "YANDEX_AI_STUDIO_API_KEY": "API-ключ сервисного аккаунта",
     "YANDEX_OAUTH_CLIENT_ID": "ClientID приложения на https://oauth.yandex.ru",
-    "YANDEX_OAUTH_CLIENT_SECRET": "Client secret того же приложения",
-    "YANDEX_OAUTH_TOKEN": "OAuth-токен: yaseo yandex --exchange <код>",
+    "YANDEX_OAUTH_CLIENT_SECRET": "Client secret того же приложения",  # подпись поля  # nosec B105
+    "YANDEX_OAUTH_TOKEN": "OAuth-токен: yaseo yandex --exchange <код>",  # подпись поля для человека  # nosec B105
     "YANDEX_OAUTH_REFRESH": "refresh-токен, приходит вместе с OAuth-токеном",
 }
 

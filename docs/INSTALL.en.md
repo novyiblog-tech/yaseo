@@ -146,7 +146,7 @@ AI Studio also shows the ID of the key itself. You don't need that one here, so 
 Open a **separate** terminal window, not inside Claude Code, and run:
 
 ```
-uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.3 yaseo init
+uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.4 yaseo init
 ```
 
 The program asks, one at a time, for:
@@ -201,7 +201,7 @@ The more you've already collected, positions, the Webmaster export from step 7, 
 
 You need this if you want to see impressions and clicks from Webmaster and visitor behavior from Metrica. For now these reports run from the terminal. Claude can run them for you if you ask.
 
-The commands below start with `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.3 yaseo`. To type less, run `uv tool install git+https://github.com/novyiblog-tech/yaseo@v0.1.3` once, and after that plain `yaseo` is enough.
+The commands below start with `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.4 yaseo`. To type less, run `uv tool install git+https://github.com/novyiblog-tech/yaseo@v0.1.4` once, and after that plain `yaseo` is enough.
 
 1. Create an app at https://oauth.yandex.ru/client/new (steps are in the Webmaster help: https://yandex.ru/dev/webmaster/doc/ru/tasks/how-to-get-oauth, in Russian):
    - name: anything you like;
@@ -220,14 +220,14 @@ The commands below start with `uvx --from git+https://github.com/novyiblog-tech/
    Allow access. Yandex shows a confirmation code; copy it.
 4. Exchange the code for a token:
    ```
-   uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.3 yaseo yandex --exchange CODE
+   uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.4 yaseo yandex --exchange CODE
    ```
    The token and the refresh token are saved to the same file automatically. The token lasts about six months and renews itself.
 
 **Check:**
 
 ```
-uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.3 yaseo yandex --check
+uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.4 yaseo yandex --check
 ```
 
 The lines `Метрика — счётчики` and `Вебмастер — пользователь` (printed exactly like this) should be marked `[OK]`. The line about Direct isn't needed for SEO; you can ignore its `[FAIL]`.
@@ -272,9 +272,9 @@ Close the terminal and open a new one: the installer adds the program's path, an
 **2. In `/mcp` the `yaseo` server shows an error, or Claude says there are no yaseo tools.**
 First check that yaseo downloads and runs. In a regular terminal:
 ```
-uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.3 yaseo --version
+uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.4 yaseo --version
 ```
-- The answer `yaseo 0.1.3` means yaseo itself is fine. Most likely Claude Code can't see `uv`; this happens when Claude Code wasn't started from a terminal. Close it, open a new terminal, and start `claude` from there.
+- The answer `yaseo 0.1.4` means yaseo itself is fine. Most likely Claude Code can't see `uv`; this happens when Claude Code wasn't started from a terminal. Close it, open a new terminal, and start `claude` from there.
 - An error about `git`: go back to step 2 and install `git`.
 - A network error: check your connection and try again.
 - `/plugin marketplace add` or `/plugin install` says `Failed to clone`, `SSL_ERROR_SYSCALL` or `Host key verification failed`: the connection to GitHub dropped, or the address went over SSH. Make sure the command has the full address `https://github.com/novyiblog-tech/yaseo.git`, and try again.

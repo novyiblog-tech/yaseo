@@ -1,5 +1,10 @@
 name: CI
 
+# Действия прибиты по SHA коммита, а не по тегу. Тег вроде `v7` автор
+# переносит когда угодно, и прогон однажды берёт не тот код, который читали
+# при выкладке. SHA не переносится. Версия рядом в комментарии — её держит
+# в свежести Dependabot (.github/dependabot.yml).
+
 on:
   push:
   pull_request:
@@ -21,9 +26,9 @@ jobs:
         # матрицы упадёт на шаге setup-python, а не молча пропустится.
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -32,32 +37,54 @@ jobs:
 
       - name: pyflakes (проверка кода; сам пакет остаётся без зависимостей)
         run: |
-          pip install pyflakes
+          pip install pyflakes==3.4.0
           python -m pyflakes src tests
+
+  bandit:
+    name: bandit (разбор кода на известные дыры)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      # Только `src`: это код, который выполняется у пользователя. В тестах
+      # лежат стенды, которые по замыслу делают опасное (кража ключа, слушание
+      # на всех адресах, подложенный символ переворота письма) — их находки
+      # были бы шумом, а шум в проверке хуже её отсутствия: его перестают читать.
+      #
+      # Разобранные ложные срабатывания помечены `# nosec <код>` прямо в коде,
+      # с причиной в той же строке. Новая находка валит прогон.
+      - name: bandit
+        run: |
+          pip install bandit==1.9.4
+          bandit -r src
 
   build:
     name: сборка пакета (python -m build)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
 
       - name: Собрать sdist и wheel
         run: |
-          pip install build
+          pip install build==1.6.1
           python -m build
 
   gitleaks:
     name: gitleaks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      - uses: gitleaks/gitleaks-action@v3
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

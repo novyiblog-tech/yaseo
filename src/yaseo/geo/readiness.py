@@ -511,7 +511,7 @@ def check_page(url: str, res: Readiness, is_home: bool,
     p = _PageParser()
     try:
         p.feed(f.text)
-    except Exception:  # noqa: BLE001 — кривой HTML не повод падать
+    except Exception:  # noqa: BLE001 — кривой HTML не повод падать  # nosec B110
         pass
 
     types: list[str] = []

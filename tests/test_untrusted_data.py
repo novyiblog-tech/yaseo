@@ -337,5 +337,104 @@ class ParameterBoundsTests(unittest.TestCase):
                 self.assertIsNotNone(wrapped, t["name"])
 
 
+class XmlBombTests(unittest.TestCase):
+    """Раздувание сущностей в чужом XML: карта сайта и выдача.
+
+    Карту берут с проверяемого сайта, а адрес сайта называет пользователь.
+    Шесть строк DTD разворачиваются стандартным разбором в миллион символов,
+    и множитель растёт с каждой строкой.
+    """
+
+    @staticmethod
+    def billion_laughs(levels: int = 4, width: int = 10) -> str:
+        rows = [f'<!ENTITY l0 "{"a" * width}">']
+        rows += [f'<!ENTITY l{i} "{f"&l{i - 1};" * width}">' for i in range(1, levels)]
+        return f"<!DOCTYPE r [{''.join(rows)}]><r>&l{levels - 1};</r>"
+
+    def test_standard_parser_really_blows_up(self) -> None:
+        """Положительный контроль: без защиты вход раздувается. Множитель
+        маленький намеренно, чтобы сам контроль не съел память машины."""
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(self.billion_laughs())
+        self.assertGreaterEqual(len(root.text or ""), 10_000)
+
+    def test_billion_laughs_is_refused(self) -> None:
+        with self.assertRaises(untrusted.XmlRefused):
+            untrusted.parse_xml(self.billion_laughs())
+
+    def test_quadratic_blowup_is_refused(self) -> None:
+        xml = ('<!DOCTYPE r [<!ENTITY a "' + "a" * 1000 + '">]><r>'
+               + "&a;" * 100 + "</r>")
+        with self.assertRaises(untrusted.XmlRefused):
+            untrusted.parse_xml(xml)
+
+    def test_external_entity_is_refused(self) -> None:
+        xml = ('<!DOCTYPE r [<!ENTITY x SYSTEM "file:///etc/passwd">]>'
+               "<r>&x;</r>")
+        with self.assertRaises(untrusted.XmlRefused):
+            untrusted.parse_xml(xml)
+
+    def test_doctype_in_utf16_is_refused(self) -> None:
+        """Обход кодировкой: в UTF-16 байты `<!DOCTYPE` не совпадают с UTF-8."""
+        for enc in ("utf-16-le", "utf-16-be", "utf-32-le", "utf-32-be"):
+            with self.subTest(encoding=enc):
+                with self.assertRaises(untrusted.XmlRefused):
+                    untrusted.parse_xml(self.billion_laughs().encode(enc))
+
+    def test_lowercase_doctype_is_refused(self) -> None:
+        with self.assertRaises(untrusted.XmlRefused):
+            untrusted.parse_xml('<!doctype r [<!entity a "b">]><r>&a;</r>')
+
+    def test_real_sitemap_still_parses(self) -> None:
+        """Вторая половина контроля: защита не ломает настоящие карты."""
+        xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+               "<url><loc>https://example.ru/</loc></url>"
+               "<url><loc>https://example.ru/o-nas</loc></url></urlset>")
+        root = untrusted.parse_xml(xml)
+        locs = [el.text for el in root.iter() if el.tag.endswith("loc")]
+        self.assertEqual(locs, ["https://example.ru/", "https://example.ru/o-nas"])
+        self.assertEqual(len(untrusted.parse_xml(xml.encode("utf-8"))), 2)
+
+    def test_many_nodes_without_any_dtd_are_refused(self) -> None:
+        """Раздувание без DTD: узел весит около сотни байт при четырёх байтах
+        разметки. Нашло независимое ревью, замер 20.09.2026: 47 КБ по проводу
+        занимали 1,3 ГБ памяти, и аудит при этом молчал."""
+        bomb = "<r>" + "<a/>" * 5000 + "</r>"
+        with self.assertRaises(untrusted.XmlRefused) as e:
+            untrusted.parse_xml(bomb, max_nodes=1000)
+        self.assertIn("узлов", str(e.exception))
+
+    def test_counting_stops_at_the_limit_not_after_the_whole_document(self) -> None:
+        """Обрыв на пороге, а не после разбора целиком: иначе память уже съедена."""
+        builder = untrusted._CountingBuilder(100)
+        with self.assertRaises(untrusted.XmlRefused):
+            untrusted.parse_xml("<r>" + "<a/>" * 100_000 + "</r>", max_nodes=100)
+        self.assertEqual(builder.nodes, 0)
+
+    def test_big_but_honest_sitemap_still_parses(self) -> None:
+        """Настоящая большая карта проходит: 50 000 адресов по протоколу."""
+        xml = ('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+               + "<url><loc>https://example.ru/a</loc><lastmod>2026-09-20</lastmod></url>" * 20_000
+               + "</urlset>")
+        root = untrusted.parse_xml(xml)
+        self.assertEqual(len(root), 20_000)
+
+    def test_html_instead_of_a_sitemap_says_so(self) -> None:
+        """Диагноз по делу: на /sitemap.xml часто отвечает обычная страница."""
+        page = "<!DOCTYPE html>\n<html><head><title>Главная</title></head></html>"
+        with self.assertRaises(untrusted.XmlRefused) as e:
+            untrusted.parse_xml(page)
+        self.assertIn("HTML-страница", str(e.exception))
+
+    def test_serp_and_sitemap_go_through_the_guard(self) -> None:
+        """Защита подключена в обоих местах разбора, а не лежит без дела."""
+        from yaseo import audit
+        self.assertIs(audit.parse_xml, untrusted.parse_xml)
+        self.assertIs(yandex_serp.parse_xml, untrusted.parse_xml)
+        with self.assertRaises(untrusted.XmlRefused):
+            yandex_serp.parse_serp(self.billion_laughs(), "запрос")
+
+
 if __name__ == "__main__":
     unittest.main()

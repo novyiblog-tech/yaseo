@@ -1,0 +1,23 @@
+version: 2
+
+# У пакета нет зависимостей (`dependencies = []` в pyproject.toml), поэтому
+# обновлять нечего, кроме действий GitHub. Они и есть цепочка поставки: чужой
+# код, который выполняется с доступом к репозиторию на каждом прогоне.
+#
+# Действия прибиты по SHA коммита, а не по тегу: тег переносится, коммит нет.
+# Dependabot умеет обновлять и такую запись — он меняет SHA и комментарий
+# с версией рядом, и обновление видно в отдельном запросе на слияние.
+
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: Europe/Moscow
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+    labels:
+      - dependencies

@@ -32,7 +32,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # чужой XML разбирает untrusted.parse_xml, не этот импорт  # nosec B405
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from urllib.parse import urlsplit
@@ -40,6 +40,7 @@ from urllib.parse import urlsplit
 from . import net
 from .env import SEARCH_KEYS, use_proxy
 from .env import load_env as _load_env
+from .untrusted import parse_xml
 
 
 def load_env() -> dict[str, str]:
@@ -220,7 +221,7 @@ def _url_depth(url: str) -> int:
 
 def parse_serp(xml: str, query: str, region: int = RUSSIA) -> SerpResult:
     fetched_at = datetime.now(timezone.utc).isoformat()
-    root = ET.fromstring(xml)
+    root = parse_xml(xml)
 
     err = root.find(".//response/error")
     if err is not None:
