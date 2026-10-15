@@ -2,7 +2,7 @@
 
 Формат по https://keepachangelog.com/ru/1.1.0/, версии по https://semver.org/lang/ru/.
 
-## [Не выпущено]
+## [0.1.5] - 2026-10-15
 
 ### Исправлено
 

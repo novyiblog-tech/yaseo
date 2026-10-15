@@ -58,7 +58,7 @@ The audit, AI-search readiness and the plan work without keys. Positions, live s
 Keys go in with one command in the terminal:
 
 ```
-uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.4 yaseo init
+uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.5 yaseo init
 ```
 
 You pay for the calls yourself, at Yandex's price list: https://aistudio.yandex.ru/ru/docs/search-api/pricing (in Russian). Before any paid step, Claude tells you how many calls it will make and waits for your yes. The generative answer is the most expensive part: as of 2026-09-16 it costs 5,080 RUB per 1,000 requests. Perplexity, OpenAI, Gemini and Claude keys are optional, and you pay each provider at your own rate.
@@ -113,22 +113,22 @@ What follows is for anyone curious how it all works.
 
 ## Other install methods
 
-The plugin from the section above connects the `yaseo` MCP server and seven skills: `yaseo-setup`, `seo-site-check`, `keyword-research`, `position-tracking`, `content-brief`, `improve-positions`, `ai-visibility`. The server starts with the command `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.4 yaseo-mcp`, so it needs `uv` to run at all.
+The plugin from the section above connects the `yaseo` MCP server and seven skills: `yaseo-setup`, `seo-site-check`, `keyword-research`, `position-tracking`, `content-brief`, `improve-positions`, `ai-visibility`. The server starts with the command `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.5 yaseo-mcp`, so it needs `uv` to run at all.
 
 ### Only the MCP server
 
 For Claude Code without the plugin:
 
 ```
-claude mcp add --transport stdio yaseo -- uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.4 yaseo-mcp
+claude mcp add --transport stdio yaseo -- uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.5 yaseo-mcp
 ```
 
-In another MCP client, point it at the `uvx` command with the arguments `--from git+https://github.com/novyiblog-tech/yaseo@v0.1.4 yaseo-mcp`.
+In another MCP client, point it at the `uvx` command with the arguments `--from git+https://github.com/novyiblog-tech/yaseo@v0.1.5 yaseo-mcp`.
 
 A permanent `yaseo` command in the terminal:
 
 ```
-uv tool install git+https://github.com/novyiblog-tech/yaseo@v0.1.4
+uv tool install git+https://github.com/novyiblog-tech/yaseo@v0.1.5
 yaseo --help
 ```
 

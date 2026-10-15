@@ -4,7 +4,7 @@
 
 yaseo runs on your own keys, and you don't need all of them right away. The site check, AI-search readiness and the fix plan work with no keys at all. Positions, search results and Wordstat need two Yandex values; everything else is optional.
 
-The `yaseo …` commands below are given in short form. If you haven't installed yaseo with `uv tool install`, write this instead of `yaseo`: `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.4 yaseo …`.
+The `yaseo …` commands below are given in short form. If you haven't installed yaseo with `uv tool install`, write this instead of `yaseo`: `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.5 yaseo …`.
 
 ## Where yaseo looks for keys
 

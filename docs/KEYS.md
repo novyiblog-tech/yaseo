@@ -4,7 +4,7 @@
 
 yaseo работает на ваших ключах, и все они нужны не сразу. Проверка сайта, готовность к ИИ-поиску и план правок обходятся без ключей. Для позиций, выдачи и Wordstat нужны два значения Яндекса, остальное добавляется по желанию.
 
-Команды `yaseo …` ниже даны в коротком виде. Если вы не ставили yaseo через `uv tool install`, пишите вместо `yaseo` так: `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.4 yaseo …`.
+Команды `yaseo …` ниже даны в коротком виде. Если вы не ставили yaseo через `uv tool install`, пишите вместо `yaseo` так: `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.5 yaseo …`.
 
 ## Где yaseo ищет ключи
 
