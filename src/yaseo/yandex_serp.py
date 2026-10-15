@@ -34,7 +34,7 @@ import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET  # чужой XML разбирает untrusted.parse_xml, не этот импорт  # nosec B405
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
 
 from . import net
@@ -327,13 +327,33 @@ def merge_pages(pages: list[SerpResult], n: int) -> SerpResult:
                       found_all=found, docs=docs)
 
 
+#: Окно отложенных запросов (справка Search API, «Квоты и лимиты»): 00:00–06:00
+#: по Москве. Вне него Яндекс отвечает 429 «search rate limit exceeded»
+#: или 501, и по тексту ошибки причина не видна.
+DEFERRED_WINDOW_MSK = (0, 6)
+_MSK = timezone(timedelta(hours=3))
+
+
+def in_deferred_window(now: datetime | None = None) -> bool:
+    """Открыто ли сейчас окно отложенных запросов (по московскому времени)."""
+    hour = (now or datetime.now(timezone.utc)).astimezone(_MSK).hour
+    return DEFERRED_WINDOW_MSK[0] <= hour < DEFERRED_WINDOW_MSK[1]
+
+
+def _window_hint(code: int, now: datetime | None = None) -> str:
+    if code not in (429, 501) or in_deferred_window(now):
+        return ""
+    return (" (вероятная причина: отложенные запросы Search API принимаются только "
+            "с 00:00 до 06:00 по Москве; повторите в это окно)")
+
+
 def _describe(e: BaseException) -> str:
     if isinstance(e, urllib.error.HTTPError):
         try:
             detail = e.read().decode("utf-8", errors="replace")[:300]
         except Exception:  # noqa: BLE001 — тело ошибки не критично
             detail = ""
-        return f"HTTPError {e.code}: {detail}"
+        return f"HTTPError {e.code}: {detail}{_window_hint(e.code)}"
     if isinstance(e, urllib.error.URLError):
         return f"{type(e).__name__}: {e.reason}"
     return f"{type(e).__name__}: {e}"

@@ -174,3 +174,23 @@ class NetworkMockedTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DeferredWindowTest(unittest.TestCase):
+    """Вне окна 00:00–06:00 МСК 429/501 объясняются, внутри окна — нет."""
+
+    def _at(self, hour_msk: int):
+        from datetime import datetime, timedelta, timezone
+        return datetime(2026, 10, 15, hour_msk, 30, tzinfo=timezone(timedelta(hours=3)))
+
+    def test_window_bounds(self):
+        self.assertTrue(yandex_serp.in_deferred_window(self._at(0)))
+        self.assertTrue(yandex_serp.in_deferred_window(self._at(5)))
+        self.assertFalse(yandex_serp.in_deferred_window(self._at(6)))
+        self.assertFalse(yandex_serp.in_deferred_window(self._at(23)))
+
+    def test_hint_only_for_429_501_outside_window(self):
+        self.assertIn("00:00 до 06:00", yandex_serp._window_hint(429, self._at(7)))
+        self.assertIn("00:00 до 06:00", yandex_serp._window_hint(501, self._at(7)))
+        self.assertEqual(yandex_serp._window_hint(429, self._at(2)), "")
+        self.assertEqual(yandex_serp._window_hint(500, self._at(7)), "")
