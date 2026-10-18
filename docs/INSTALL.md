@@ -146,7 +146,7 @@ AI Studio показывает ещё идентификатор самого к
 Откройте **отдельное** окно терминала, не внутри Claude Code, и выполните:
 
 ```
-uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.5 yaseo init
+uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.6 yaseo init
 ```
 
 Программа спросит по очереди:
@@ -201,7 +201,7 @@ Claude вызовет `whoami`. В ответе должны быть «Выда
 
 Нужно, если вы хотите видеть показы и клики из Вебмастера и поведение из Метрики. Эти отчёты пока запускаются из терминала. Claude может запустить их сам, если попросить.
 
-Команды ниже начинаются с `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.5 yaseo`. Чтобы писать короче, один раз выполните `uv tool install git+https://github.com/novyiblog-tech/yaseo@v0.1.5`, и дальше хватит просто `yaseo`.
+Команды ниже начинаются с `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.6 yaseo`. Чтобы писать короче, один раз выполните `uv tool install git+https://github.com/novyiblog-tech/yaseo@v0.1.6`, и дальше хватит просто `yaseo`.
 
 1. Создайте приложение на https://oauth.yandex.ru/client/new (порядок описан в справке Вебмастера: https://yandex.ru/dev/webmaster/doc/ru/tasks/how-to-get-oauth):
    - название любое;
@@ -220,14 +220,14 @@ Claude вызовет `whoami`. В ответе должны быть «Выда
    Разрешите доступ. Яндекс покажет код подтверждения, скопируйте его.
 4. Обменяйте код на токен:
    ```
-   uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.5 yaseo yandex --exchange КОД
+   uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.6 yaseo yandex --exchange КОД
    ```
    Токен и токен продления запишутся в тот же файл. Токен живёт около полугода и продлевается сам.
 
 **Проверка:**
 
 ```
-uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.5 yaseo yandex --check
+uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.6 yaseo yandex --check
 ```
 
 У строк `Метрика — счётчики` и `Вебмастер — пользователь` должна стоять пометка `[OK]`. Строка про Директ для SEO не нужна, на её `[FAIL]` можно не смотреть.
@@ -272,7 +272,7 @@ Claude вызовет `geo_providers` и покажет таблицу: пров
 **2. В `/mcp` у сервера `yaseo` ошибка, или Claude говорит, что инструментов yaseo нет.**
 Сначала проверьте, что yaseo скачивается и запускается. В обычном терминале:
 ```
-uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.5 yaseo --version
+uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.6 yaseo --version
 ```
 - Ответ `yaseo 0.1.4` значит, что с самим yaseo всё в порядке. Скорее всего, Claude Code не видит `uv`: так бывает, когда Claude Code запущен не из терминала. Закройте его, откройте новый терминал и запустите `claude` оттуда.
 - Ошибка про `git`: вернитесь к шагу 2 и поставьте `git`.

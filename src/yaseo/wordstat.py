@@ -6,6 +6,9 @@
 - frequency(phrase, region)     -> Frequency
 - frequencies(phrases, ...)     -> list[Frequency]
 - expansions(phrase, ...)       -> list[Expansion]
+- dynamics(phrase, from_date, ...) -> Dynamics
+- regions(phrase, kind, ...)    -> RegionsDistribution
+- region_names()                -> {код региона: название}
 - latest_snapshot()             -> (путь, {фраза: частотность})
 
 Снапшоты лежат в каталоге данных: `<data_dir>/snapshots/wordstat-*.jsonl`.
@@ -44,11 +47,51 @@ class Frequency:
     error: str | None = None
 
 
+@dataclass
+class DynamicsPoint:
+    date: str
+    count: int
+    #: доля таких запросов от всех запросов к Яндексу
+    share: float | None
+
+
+@dataclass
+class Dynamics:
+    phrase: str
+    period: str
+    points: list[DynamicsPoint] = field(default_factory=list)
+    error: str | None = None
+
+
+@dataclass
+class RegionShare:
+    region: str
+    count: int
+    share: float | None
+    #: доля фразы в регионе к доле по стране: больше 1 — спрашивают чаще среднего
+    affinity: float | None
+
+
+@dataclass
+class RegionsDistribution:
+    phrase: str
+    kind: str
+    regions: list[RegionShare] = field(default_factory=list)
+    error: str | None = None
+
+
 def _num(value) -> int:
     try:
         return int(value or 0)
     except (TypeError, ValueError):
         return 0
+
+
+def _float(value) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _parse(phrase: str, region: str, res: dict) -> Frequency:
@@ -90,6 +133,57 @@ def expansions(
 ) -> list[Expansion]:
     f = frequency(phrase, region=region, num=num)
     return [e for e in f.expansions if e.freq >= min_freq]
+
+
+def dynamics(
+    phrase: str,
+    from_date: str,
+    to_date: str | None = None,
+    period: str = "PERIOD_MONTHLY",
+    regions: list[str] | None = None,
+) -> Dynamics:
+    res = client().dynamics(
+        phrase, from_date, to_date=to_date, period=period, regions=regions
+    )
+    if "_error" in res:
+        return Dynamics(phrase=phrase, period=period, error=str(res["_error"]))
+    points = [
+        DynamicsPoint(
+            date=str(r.get("date", "")), count=_num(r.get("count")),
+            share=_float(r.get("share")),
+        )
+        for r in (res.get("results") or [])
+    ]
+    return Dynamics(phrase=phrase, period=period, points=points)
+
+
+def regions(phrase: str, kind: str = "REGION_ALL") -> RegionsDistribution:
+    res = client().regions_distribution(phrase, region=kind)
+    if "_error" in res:
+        return RegionsDistribution(phrase=phrase, kind=kind, error=str(res["_error"]))
+    rows = [
+        RegionShare(
+            region=str(r.get("region", "")), count=_num(r.get("count")),
+            share=_float(r.get("share")), affinity=_float(r.get("affinityIndex")),
+        )
+        for r in (res.get("results") or [])
+    ]
+    return RegionsDistribution(phrase=phrase, kind=kind, regions=rows)
+
+
+def region_names() -> dict[str, str]:
+    """{код региона: название} из дерева Wordstat. Ошибка — пустой словарь."""
+    res = client().regions_tree()
+    names: dict[str, str] = {}
+
+    def walk(nodes) -> None:
+        for n in nodes or []:
+            names[str(n.get("id", ""))] = str(n.get("label", ""))
+            walk(n.get("children"))
+
+    if "_error" not in res:
+        walk(res.get("regions"))
+    return names
 
 
 def latest_snapshot() -> tuple[Path | None, dict[str, int]]:

@@ -13,6 +13,9 @@
 
 Публичный API:
 - top_requests(phrase, regions=["225"], devices=["DEVICE_ALL"], num=200) -> dict
+- dynamics(phrase, from_date, to_date=None, period="PERIOD_MONTHLY", regions=None, devices=None) -> dict
+- regions_distribution(phrase, region="REGION_ALL", devices=None) -> dict
+- regions_tree() -> dict
 - sweep(seeds_path, out_path, regions, devices, num, delay) -> int
 """
 from __future__ import annotations
@@ -28,7 +31,18 @@ from . import net
 from .env import SEARCH_KEYS, use_proxy
 from .env import load_env as _load_env
 
-ENDPOINT = "https://searchapi.api.cloud.yandex.net/v2/wordstat/topRequests"
+BASE = "https://searchapi.api.cloud.yandex.net/v2/wordstat"
+ENDPOINT = f"{BASE}/topRequests"
+DYNAMICS_ENDPOINT = f"{BASE}/dynamics"
+REGIONS_ENDPOINT = f"{BASE}/regions"
+REGIONS_TREE_ENDPOINT = f"{BASE}/getRegionsTree"
+
+PERIODS = ("PERIOD_MONTHLY", "PERIOD_WEEKLY", "PERIOD_DAILY")
+REGION_KINDS = ("REGION_ALL", "REGION_CITIES", "REGION_REGIONS")
+#: Справка Wordstat: фраза до 400 знаков, регионов до 100, устройств до 3.
+MAX_PHRASE = 400
+MAX_REGIONS = 100
+MAX_DEVICES = 3
 
 
 def load_env() -> dict[str, str]:
@@ -47,24 +61,12 @@ def opener() -> urllib.request.OpenerDirector:
     return net.keyed_opener(proxy=use_proxy())
 
 
-def top_requests(
-    phrase: str,
-    regions: list[str] | None = None,
-    devices: list[str] | None = None,
-    num: int = 200,
-    env: dict[str, str] | None = None,
-    timeout: int = 30,
+def _post(
+    endpoint: str, body: dict, env: dict[str, str], timeout: int = 30,
 ) -> dict:
-    env = env or load_env()
-    body = {
-        "phrase": phrase,
-        "folderId": env["YC_FOLDER_ID"],
-        "numPhrases": num,
-        "regions": regions or ["225"],
-        "devices": devices or ["DEVICE_ALL"],
-    }
+    """Один POST к Wordstat. Ошибка не бросается, а возвращается как `_error`."""
     req = urllib.request.Request(
-        ENDPOINT,
+        endpoint,
         data=json.dumps(body).encode("utf-8"),
         headers={
             "Authorization": f"Api-Key {env['YANDEX_AI_STUDIO_API_KEY']}",
@@ -82,6 +84,105 @@ def top_requests(
         return {"_error": {"reason": str(e.reason)}}
     except Exception as e:  # pragma: no cover
         return {"_error": {"reason": repr(e)}}
+
+
+def _bad(reason: str) -> dict:
+    """Отказ до сети: лишнее обращение стоит денег, а ответ всё равно был бы ошибкой."""
+    return {"_error": {"reason": reason}}
+
+
+def top_requests(
+    phrase: str,
+    regions: list[str] | None = None,
+    devices: list[str] | None = None,
+    num: int = 200,
+    env: dict[str, str] | None = None,
+    timeout: int = 30,
+) -> dict:
+    env = env or load_env()
+    body = {
+        "phrase": phrase,
+        "folderId": env["YC_FOLDER_ID"],
+        "numPhrases": num,
+        "regions": regions or ["225"],
+        "devices": devices or ["DEVICE_ALL"],
+    }
+    return _post(ENDPOINT, body, env, timeout)
+
+
+def dynamics(
+    phrase: str,
+    from_date: str,
+    to_date: str | None = None,
+    period: str = "PERIOD_MONTHLY",
+    regions: list[str] | None = None,
+    devices: list[str] | None = None,
+    env: dict[str, str] | None = None,
+    timeout: int = 30,
+) -> dict:
+    """
+    GetDynamics: число запросов с фразой по периодам.
+
+    `from_date`/`to_date` — RFC3339 (`2026-01-01T00:00:00Z`). Без `to_date`
+    ответ берётся до текущего момента. Ответ: `results[] {date, count, share}`,
+    `count` и `share` приходят строками.
+    """
+    if period not in PERIODS:
+        return _bad(f"period должен быть одним из {', '.join(PERIODS)}, получено {period!r}")
+    if not phrase or len(phrase) > MAX_PHRASE:
+        return _bad(f"фраза пуста или длиннее {MAX_PHRASE} знаков")
+    if not from_date:
+        return _bad("from_date обязателен")
+    if len(regions or []) > MAX_REGIONS or len(devices or []) > MAX_DEVICES:
+        return _bad(f"не больше {MAX_REGIONS} регионов и {MAX_DEVICES} устройств")
+    env = env or load_env()
+    body: dict = {
+        "phrase": phrase,
+        "folderId": env["YC_FOLDER_ID"],
+        "period": period,
+        "fromDate": from_date,
+        "devices": devices or ["DEVICE_ALL"],
+    }
+    if to_date:
+        body["toDate"] = to_date
+    if regions:
+        body["regions"] = regions
+    return _post(DYNAMICS_ENDPOINT, body, env, timeout)
+
+
+def regions_distribution(
+    phrase: str,
+    region: str = "REGION_ALL",
+    devices: list[str] | None = None,
+    env: dict[str, str] | None = None,
+    timeout: int = 30,
+) -> dict:
+    """
+    GetRegionsDistribution: распределение запросов по регионам за последние
+    30 дней. `region` — вид среза (`REGION_ALL`, `REGION_CITIES`,
+    `REGION_REGIONS`). Ответ: `results[] {region, count, share, affinityIndex}`,
+    `region` — код, названия даёт `regions_tree()`.
+    """
+    if region not in REGION_KINDS:
+        return _bad(f"region должен быть одним из {', '.join(REGION_KINDS)}, получено {region!r}")
+    if not phrase or len(phrase) > MAX_PHRASE:
+        return _bad(f"фраза пуста или длиннее {MAX_PHRASE} знаков")
+    if len(devices or []) > MAX_DEVICES:
+        return _bad(f"не больше {MAX_DEVICES} устройств")
+    env = env or load_env()
+    body = {
+        "phrase": phrase,
+        "folderId": env["YC_FOLDER_ID"],
+        "region": region,
+        "devices": devices or ["DEVICE_ALL"],
+    }
+    return _post(REGIONS_ENDPOINT, body, env, timeout)
+
+
+def regions_tree(env: dict[str, str] | None = None, timeout: int = 30) -> dict:
+    """GetRegionsTree: дерево кодов регионов `regions[] {id, label, children}`. Не тарифицируется."""
+    env = env or load_env()
+    return _post(REGIONS_TREE_ENDPOINT, {"folderId": env["YC_FOLDER_ID"]}, env, timeout)
 
 
 def sweep(

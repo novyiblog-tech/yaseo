@@ -68,6 +68,7 @@ def rates_path() -> Path:
 RATE_ENV = {
     "search-api": "YASEO_RATE_SEARCH_API",
     "wordstat": "YASEO_RATE_WORDSTAT",
+    "wordstat-regions": "YASEO_RATE_WORDSTAT_REGIONS",
     "движок текста": "YASEO_RATE_ENGINE",
 }
 
@@ -88,6 +89,11 @@ SOURCES: dict[str, dict] = {
     "wordstat": {
         "имя": "Yandex Wordstat API",
         "единица": "обращение к частотности",
+        "платный": True,
+    },
+    "wordstat-regions": {
+        "имя": "Yandex Wordstat API, регионы",
+        "единица": "обращение к распределению по регионам",
         "платный": True,
     },
     "движок текста": {

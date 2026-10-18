@@ -130,5 +130,114 @@ class WordstatClientTests(unittest.TestCase):
         self.assertIn("reason", res["_error"])
 
 
+class DynamicsRegionsClientTests(unittest.TestCase):
+    ENV = {"YC_FOLDER_ID": "folder-1", "YANDEX_AI_STUDIO_API_KEY": "key-1"}
+
+    def _call(self, payload, fn, *a, **kw):
+        fake = FakeOpener([FakeResponse(json.dumps(payload).encode())])
+        with mock.patch.object(wordstat_client, "opener", return_value=fake):
+            res = fn(*a, env=self.ENV, **kw)
+        return res, fake
+
+    def test_dynamics_body_and_endpoint(self) -> None:
+        payload = {"results": [{"date": "2026-01-01T00:00:00Z", "count": "100", "share": "0.0001"}]}
+        res, fake = self._call(
+            payload, wordstat_client.dynamics, "окна", "2026-01-01T00:00:00Z",
+            period="PERIOD_WEEKLY", regions=["213"],
+        )
+        self.assertEqual(res, payload)
+        req = fake.requests[0]
+        self.assertTrue(req.full_url.endswith("/v2/wordstat/dynamics"))
+        body = json.loads(req.data.decode("utf-8"))
+        self.assertEqual(body["period"], "PERIOD_WEEKLY")
+        self.assertEqual(body["fromDate"], "2026-01-01T00:00:00Z")
+        self.assertEqual(body["regions"], ["213"])
+        self.assertEqual(body["folderId"], "folder-1")
+        self.assertNotIn("toDate", body)
+
+    def test_dynamics_sends_to_date_when_given(self) -> None:
+        _, fake = self._call(
+            {"results": []}, wordstat_client.dynamics, "окна",
+            "2026-01-01T00:00:00Z", to_date="2026-06-30T23:59:59Z",
+        )
+        body = json.loads(fake.requests[0].data.decode("utf-8"))
+        self.assertEqual(body["toDate"], "2026-06-30T23:59:59Z")
+
+    def test_bad_input_is_refused_before_network(self) -> None:
+        fake = FakeOpener([])
+        with mock.patch.object(wordstat_client, "opener", return_value=fake):
+            for res in (
+                wordstat_client.dynamics("окна", "2026-01-01T00:00:00Z", period="MONTH", env=self.ENV),
+                wordstat_client.dynamics("x" * 401, "2026-01-01T00:00:00Z", env=self.ENV),
+                wordstat_client.dynamics("окна", "", env=self.ENV),
+                wordstat_client.dynamics("окна", "2026-01-01T00:00:00Z", regions=["1"] * 101, env=self.ENV),
+                wordstat_client.regions_distribution("окна", region="ALL", env=self.ENV),
+                wordstat_client.regions_distribution("", env=self.ENV),
+            ):
+                self.assertIn("_error", res)
+        self.assertEqual(fake.requests, [])
+
+    def test_regions_distribution_body_and_endpoint(self) -> None:
+        res, fake = self._call(
+            {"results": []}, wordstat_client.regions_distribution, "окна",
+            region="REGION_CITIES",
+        )
+        req = fake.requests[0]
+        self.assertTrue(req.full_url.endswith("/v2/wordstat/regions"))
+        body = json.loads(req.data.decode("utf-8"))
+        self.assertEqual(body["region"], "REGION_CITIES")
+        self.assertEqual(body["devices"], ["DEVICE_ALL"])
+
+    def test_regions_tree_sends_only_folder(self) -> None:
+        _, fake = self._call({"regions": []}, wordstat_client.regions_tree)
+        req = fake.requests[0]
+        self.assertTrue(req.full_url.endswith("/v2/wordstat/getRegionsTree"))
+        self.assertEqual(json.loads(req.data.decode("utf-8")), {"folderId": "folder-1"})
+
+    def test_http_error_becomes_error_dict(self) -> None:
+        err = urllib.error.HTTPError(
+            url="https://x", code=429, msg="Too Many Requests",
+            hdrs=None, fp=io.BytesIO(b"limit"),
+        )
+        with mock.patch.object(wordstat_client, "opener", return_value=FakeOpener([err])):
+            res = wordstat_client.regions_tree(env=self.ENV)
+        self.assertEqual(res["_error"]["status"], 429)
+
+
+class DynamicsRegionsParsingTests(unittest.TestCase):
+    def test_dynamics_parses_string_numbers(self) -> None:
+        resp = {"results": [
+            {"date": "2026-01-01T00:00:00Z", "count": "1200", "share": "0.00031"},
+            {"date": "2026-02-01T00:00:00Z", "count": "", "share": None},
+        ]}
+        with mock.patch("yaseo.wordstat_client.dynamics", return_value=resp):
+            d = wordstat.dynamics("окна", "2026-01-01T00:00:00Z")
+        self.assertIsNone(d.error)
+        self.assertEqual([p.count for p in d.points], [1200, 0])
+        self.assertAlmostEqual(d.points[0].share, 0.00031)
+        self.assertIsNone(d.points[1].share)
+
+    def test_dynamics_error_is_kept(self) -> None:
+        with mock.patch("yaseo.wordstat_client.dynamics", return_value={"_error": {"reason": "квота"}}):
+            d = wordstat.dynamics("окна", "2026-01-01T00:00:00Z")
+        self.assertIn("квота", d.error)
+        self.assertEqual(d.points, [])
+
+    def test_regions_parses_affinity(self) -> None:
+        resp = {"results": [{"region": "213", "count": "500", "share": "0.2", "affinityIndex": "1.8"}]}
+        with mock.patch("yaseo.wordstat_client.regions_distribution", return_value=resp):
+            r = wordstat.regions("окна")
+        self.assertEqual((r.regions[0].region, r.regions[0].count), ("213", 500))
+        self.assertAlmostEqual(r.regions[0].affinity, 1.8)
+
+    def test_region_names_flattens_tree_and_survives_error(self) -> None:
+        tree = {"regions": [{"id": "225", "label": "Россия", "children": [
+            {"id": "213", "label": "Москва", "children": []}]}]}
+        with mock.patch("yaseo.wordstat_client.regions_tree", return_value=tree):
+            self.assertEqual(wordstat.region_names(), {"225": "Россия", "213": "Москва"})
+        with mock.patch("yaseo.wordstat_client.regions_tree", return_value={"_error": {}}):
+            self.assertEqual(wordstat.region_names(), {})
+
+
 if __name__ == "__main__":
     unittest.main()
