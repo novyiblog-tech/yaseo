@@ -48,6 +48,7 @@ def load_env() -> dict[str, str]:
 
 
 SEARCH_ENDPOINT = "https://searchapi.api.cloud.yandex.net/v2/web/searchAsync"
+SYNC_ENDPOINT = "https://searchapi.api.cloud.yandex.net/v2/web/search"
 OPERATION_ENDPOINT = "https://operation.api.cloud.yandex.net/operations"
 
 RUSSIA = 225
@@ -143,21 +144,8 @@ def _get(url: str, api_key: str, timeout: int = 30) -> dict:
         return json.loads(r.read().decode("utf-8"))
 
 
-def search_async(
-    query: str,
-    region: int = RUSSIA,
-    n: int = PAGE_SIZE,
-    page: int = 0,
-    env: dict[str, str] | None = None,
-) -> str:
-    """Ставит поисковую задачу на одну страницу выдачи. Возвращает id операции.
-
-    `n` — сколько групп на странице (groupsOnPage), `page` — номер страницы
-    с нуля (query.page). Справка: aistudio.yandex.ru/ru/docs/search-api/concepts/web-search.
-    Глубину больше страницы набирает `serp`, а не раздутый `n`.
-    """
-    env = env or load_env()
-    body = {
+def _search_body(query: str, region: int, n: int, page: int, env: dict[str, str]) -> dict:
+    return {
         "query": {
             "searchType": "SEARCH_TYPE_RU",
             "queryText": query,
@@ -175,11 +163,50 @@ def search_async(
         "folderId": env["YC_FOLDER_ID"],
         "responseFormat": "FORMAT_XML",
     }
+
+
+def search_async(
+    query: str,
+    region: int = RUSSIA,
+    n: int = PAGE_SIZE,
+    page: int = 0,
+    env: dict[str, str] | None = None,
+) -> str:
+    """Ставит поисковую задачу на одну страницу выдачи. Возвращает id операции.
+
+    `n` — сколько групп на странице (groupsOnPage), `page` — номер страницы
+    с нуля (query.page). Справка: aistudio.yandex.ru/ru/docs/search-api/concepts/web-search.
+    Глубину больше страницы набирает `serp`, а не раздутый `n`.
+    """
+    env = env or load_env()
+    body = _search_body(query, region, n, page, env)
     res = _post(SEARCH_ENDPOINT, body, env["YANDEX_AI_STUDIO_API_KEY"])
     op_id = res.get("id")
     if not op_id:
         raise RuntimeError(f"Search API не вернул id операции: {res}")
     return op_id
+
+
+def search_sync(
+    query: str,
+    region: int = RUSSIA,
+    n: int = PAGE_SIZE,
+    page: int = 0,
+    env: dict[str, str] | None = None,
+    timeout: int = 60,
+) -> str:
+    """Синхронный запрос одной страницы выдачи: отвечает сразу, в любое время суток.
+
+    Дороже отложенного (днём около 0,49 ₽ против 0,03 ₽ за обращение), зато не ждёт
+    окна 00:00–06:00 по Москве. Возвращает XML выдачи, как `wait_operation`.
+    """
+    env = env or load_env()
+    body = _search_body(query, region, n, page, env)
+    res = _post(SYNC_ENDPOINT, body, env["YANDEX_AI_STUDIO_API_KEY"], timeout=timeout)
+    raw = res.get("rawData")
+    if not raw:
+        raise RuntimeError(f"Search API не вернул rawData: {sorted(res)}")
+    return base64.b64decode(raw).decode("utf-8")
 
 
 def wait_operation(
@@ -347,13 +374,13 @@ def _window_hint(code: int, now: datetime | None = None) -> str:
             "с 00:00 до 06:00 по Москве; повторите в это окно)")
 
 
-def _describe(e: BaseException) -> str:
+def _describe(e: BaseException, deferred: bool = True) -> str:
     if isinstance(e, urllib.error.HTTPError):
         try:
             detail = e.read().decode("utf-8", errors="replace")[:300]
         except Exception:  # noqa: BLE001 — тело ошибки не критично
             detail = ""
-        return f"HTTPError {e.code}: {detail}{_window_hint(e.code)}"
+        return f"HTTPError {e.code}: {detail}{_window_hint(e.code) if deferred else ''}"
     if isinstance(e, urllib.error.URLError):
         return f"{type(e).__name__}: {e.reason}"
     return f"{type(e).__name__}: {e}"
@@ -414,21 +441,55 @@ def _submit(query: str, region: int, n: int, env: dict[str, str],
     return tasks
 
 
+def _serp_sync(query: str, region: int, n: int, env: dict[str, str], timeout: float) -> SerpResult:
+    """Страницы глубины n синхронно, одна за другой; склейка и пометка ошибки как у `_collect`."""
+    total = pages_for(n)
+    pages: list[SerpResult] = []
+    problem: str | None = None
+    for page_no in range(total):
+        try:
+            res = parse_serp(search_sync(query, region=region, n=PAGE_SIZE, page=page_no,
+                                         env=env, timeout=int(timeout)), query, region)
+        except Exception as e:  # noqa: BLE001 — причина уезжает в поле error
+            problem = _describe(e, deferred=False)
+        else:
+            problem = res.error
+            if not problem:
+                pages.append(res)
+        if problem:
+            where = f"страница {page_no + 1} из {total}: " if total > 1 else ""
+            problem = where + problem
+            break
+    if not pages:
+        return _failed(query, region, problem or "страница не получена")
+    merged = merge_pages(pages, n)
+    merged.error = problem
+    return merged
+
+
 def serp(
     query: str,
     region: int = RUSSIA,
     n: int = PAGE_SIZE,
     env: dict[str, str] | None = None,
     timeout: float = 60.0,
+    mode: str = "async",
 ) -> SerpResult:
     """
     Поиск + ожидание + разбор. Ошибки возвращаются в поле error, не бросаются.
+
+    mode="async" — отложенный запрос: дёшево, но принимается только 00:00–06:00 МСК.
+    mode="sync" — синхронный: сразу и круглые сутки, но в десятки раз дороже.
 
     Глубина n (не больше MAX_DEPTH) набирается страницами по PAGE_SIZE:
     n=30 — три страницы, то есть три платных обращения (`pages_for(n)`).
     """
     env = env or load_env()
     depth = max(1, min(int(n), MAX_DEPTH))
+    if mode == "sync":
+        return _serp_sync(query, region, depth, env, timeout)
+    if mode != "async":
+        raise ValueError(f"mode: нужен async или sync, получено «{mode}»")
     return _collect(_submit(query, region, depth, env), query, region, depth, env, timeout)
 
 

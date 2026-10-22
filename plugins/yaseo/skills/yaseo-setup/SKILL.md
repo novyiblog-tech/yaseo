@@ -39,7 +39,7 @@ description: Помочь человеку настроить yaseo — полу
 Попросите человека выполнить в терминале:
 
 ```
-uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.6 yaseo init
+uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.7 yaseo init
 ```
 
 Программа спросит идентификатор каталога, ключ (ввод скрыт) и, по желанию, домен сайта. Запишет всё в `~/.config/yaseo/.env` с доступом только для владельца. В конце предложит одну живую проверку за небольшую плату. От неё можно отказаться.
@@ -52,7 +52,7 @@ uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.6 yaseo init
 
 ## 5. Необязательное
 
-- **Вебмастер и Метрика.** Нужны OAuth-приложение на https://oauth.yandex.ru и токен. Порядок описан в `docs/INSTALL.md`, шаг 7. Проверка: `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.6 yaseo yandex --check`. Эти отчёты пока работают только из командной строки (`yaseo webmaster`, `yaseo metrika`), среди инструментов MCP их нет.
+- **Вебмастер и Метрика.** Нужны OAuth-приложение на https://oauth.yandex.ru и токен. Порядок описан в `docs/INSTALL.md`, шаг 7. Проверка: `uvx --from git+https://github.com/novyiblog-tech/yaseo@v0.1.7 yaseo yandex --check`. Эти отчёты пока работают только из командной строки (`yaseo webmaster`, `yaseo metrika`), среди инструментов MCP их нет.
 - **ИИ-провайдеры для проверки видимости.** Вызовите `geo_providers`: он покажет, кто настроен, каких ключей нет и где их взять. Ключи `PERPLEXITY_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY` кладутся строкой `ИМЯ=значение` в `~/.config/yaseo/.env`. Все необязательные.
 
 ## Что считать фактом

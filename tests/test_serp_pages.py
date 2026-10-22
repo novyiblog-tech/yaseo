@@ -144,3 +144,32 @@ class SerpPagingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def _sync(xml: str) -> FakeResponse:
+    raw = base64.b64encode(xml.encode("utf-8")).decode("ascii")
+    return FakeResponse(json.dumps({"rawData": raw}).encode())
+
+
+class SerpSyncTests(unittest.TestCase):
+    def test_sync_answers_without_operations_and_goes_to_sync_endpoint(self) -> None:
+        fake = FakeOpener([_sync(_page_xml(0)), _sync(_page_xml(1))])
+        with mock.patch.object(yandex_serp, "opener", return_value=fake):
+            res = yandex_serp.serp("окна", n=20, env=ENV, mode="sync")
+        self.assertIsNone(res.error)
+        self.assertEqual(len(fake.requests), 2, "одна страница — одно обращение, без чтения операций")
+        self.assertTrue(all(r.full_url == yandex_serp.SYNC_ENDPOINT for r in fake.requests))
+        self.assertEqual([json.loads(r.data.decode())["query"]["page"] for r in fake.requests],
+                         ["0", "1"])
+        self.assertEqual([d.position for d in res.docs], list(range(1, 21)))
+
+    def test_async_stays_default(self) -> None:
+        fake = FakeOpener([_op("o"), _done(_page_xml(0))])
+        with mock.patch.object(yandex_serp, "opener", return_value=fake):
+            res = yandex_serp.serp("окна", n=10, env=ENV)
+        self.assertIsNone(res.error)
+        self.assertEqual(fake.requests[0].full_url, yandex_serp.SEARCH_ENDPOINT)
+
+    def test_unknown_mode_is_refused(self) -> None:
+        with self.assertRaises(ValueError):
+            yandex_serp.serp("окна", env=ENV, mode="fast")

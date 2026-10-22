@@ -1,7 +1,7 @@
 {
   "name": "yaseo",
   "displayName": "yaseo",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Напишите «Проверь сайт example.ru» и получите план правок. Аудит, готовность к ИИ-поиску, позиции и Wordstat Яндекса, цитирование в ответах ИИ. Первая проверка без ключей.",
   "author": {
     "name": "novyiblog-tech",
